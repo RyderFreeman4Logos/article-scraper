@@ -1,13 +1,13 @@
 use anyhow::{Context, Result};
 use config::AppConfig;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 use tokio::time::Duration;
-use tracing::{error, info, warn};
+use tracing::info;
 
 #[derive(Deserialize)]
 struct LlmResponse {

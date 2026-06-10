@@ -11,3 +11,4 @@ config.workspace = true
 core_lib.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+futures.workspace = true

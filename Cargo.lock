@@ -75,6 +75,7 @@ dependencies = [
  "clap",
  "config",
  "core_lib",
+ "futures",
  "tokio",
  "tracing",
  "tracing-subscriber",
