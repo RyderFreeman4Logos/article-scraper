@@ -6,21 +6,12 @@ use std::sync::Arc;
 use tokio::sync::watch;
 use tracing::{error, info};
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Default)]
 pub struct AppConfig {
     #[serde(default)]
     pub llm: LlmConfig,
     #[serde(default)]
     pub worker: WorkerConfig,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            llm: LlmConfig::default(),
-            worker: WorkerConfig::default(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]

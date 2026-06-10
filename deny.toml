@@ -1,0 +1,71 @@
+# cargo-deny configuration
+# https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+version = 2
+# Keep the advisory database in the repo's git dir so sandboxed runs can
+# take the lock without writing to system-managed cargo directories.
+db-path = ".git/cargo-deny-advisory-dbs"
+ignore = [
+    # Transitive from agent-teams -> cc-sdk -> reqwest.
+    # rustls-pemfile is archived; no non-breaking safe upgrade is available yet.
+    "RUSTSEC-2025-0134",
+    # Transitive from agent-teams -> cc-sdk -> reqwest -> hyper-rustls -> rustls -> aws-lc-rs.
+    # X.509 Name Constraints Bypass — no direct upgrade path (deep transitive).
+    "RUSTSEC-2026-0044",
+    # Transitive from same chain. CRL Distribution Point Scope Check Logic Error.
+    "RUSTSEC-2026-0048",
+    # Transitive from cc-sdk -> reqwest -> rustls. CRL revocation check bug.
+    # Safe default (UnknownStatusPolicy::Deny) mitigates impact.
+    "RUSTSEC-2026-0049",
+    # Transitive from rustls-webpki 0.101.7 (old chain). URI name constraints bypass.
+    "RUSTSEC-2026-0098",
+    # Transitive from rustls-webpki 0.101.7 (old chain). Wildcard name constraints bypass.
+    "RUSTSEC-2026-0099",
+    # Transitive from rustls-webpki 0.101.7 (old agent-teams/cc-sdk reqwest 0.11 chain).
+    # No non-breaking upgrade path exists on the 0.101 line.
+    "RUSTSEC-2026-0104",
+]
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "MPL-2.0",
+    "Zlib",
+    "CDLA-Permissive-2.0",
+    "CC0-1.0",
+]
+# xurl-core is pre-release (0.0.0-dev) with no license field in manifest yet.
+# Upstream repo (github.com/Xuanwo/xurl) is Apache-2.0 licensed.
+exceptions = [
+    { allow = ["Apache-2.0"], crate = "xurl-core" },
+]
+
+[[licenses.clarify]]
+crate = "xurl-core"
+expression = "Apache-2.0"
+license-files = []
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+skip = [
+    # agent-teams/cc-sdk -> reqwest 0.11 and tokuin/tiktoken-rs still pin base64 0.21.x.
+    { crate = "base64@0.21.7", reason = "old reqwest 0.11 and tiktoken-rs transitive chain still require 0.21.7" },
+]
+
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = [
+    "https://github.com/ZhangHanDong/agent-teams-rs.git",
+    "https://github.com/Xuanwo/xurl.git",
+    "https://github.com/RyderFreeman4Logos/tokuin.git",
+]
