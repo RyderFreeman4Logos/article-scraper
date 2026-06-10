@@ -384,8 +384,7 @@ install:
 # Requires: cargo-edit (cargo install cargo-edit)
 bump-patch:
     cargo set-version --bump patch -p article-scraper
-    @cargo run --quiet -p article-scraper -- migrate
-    git add Cargo.toml Cargo.lock weave.lock
+    git add Cargo.toml Cargo.lock
     @echo "Bumped workspace version:"
     @cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "article-scraper") | "  \(.name) = \(.version)"'
 

@@ -8,13 +8,13 @@ branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
 [ "$branch" = "dev" ] && exit 0
 [ "${CSA_SKIP_VERSION_CHECK:-0}" = "1" ] && exit 0
 
-current=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+current=$(cargo metadata --no-deps --format-version 1 2>/dev/null | jq -r '.packages[] | select(.name == "article-scraper") | .version')
 main_ver=$(git show main:Cargo.toml 2>/dev/null \
     | grep -A1 '^\[workspace\.package\]' \
     | grep '^version' | head -1 \
     | sed 's/.*"\(.*\)".*/\1/' || echo "")
 
-if [ -z "$main_ver" ]; then
+if [ -z "$current" ] || [ -z "$main_ver" ]; then
     exit 0
 fi
 
