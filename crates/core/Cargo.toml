@@ -13,3 +13,4 @@ serde_json.workspace = true
 anyhow.workspace = true
 futures.workspace = true
 tracing.workspace = true
+dirs = "6.0.0"

@@ -12,6 +12,26 @@ use tracing::info;
 #[derive(Deserialize)]
 struct LlmResponse {
     choices: Vec<Choice>,
+    #[serde(default)]
+    usage: Option<Usage>,
+    #[serde(default)]
+    created: Option<u64>,
+}
+
+#[derive(Deserialize)]
+struct Usage {
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    #[serde(default)]
+    completion_tokens_details: Option<CompletionTokensDetails>,
+    #[serde(default)]
+    reasoning_tokens: Option<u32>,
+}
+
+#[derive(Deserialize, Default)]
+struct CompletionTokensDetails {
+    #[serde(default)]
+    reasoning_tokens: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -99,6 +119,8 @@ pub async fn summarize_and_rename(path: PathBuf, config: Arc<AppConfig>) -> Resu
         "temperature": 0.2
     });
 
+    let start_time = std::time::Instant::now();
+
     let resp = client
         .post(format!(
             "{}/chat/completions",
@@ -120,6 +142,62 @@ pub async fn summarize_and_rename(path: PathBuf, config: Arc<AppConfig>) -> Resu
         .json()
         .await
         .context("Failed to parse LLM JSON response")?;
+
+    let elapsed = start_time.elapsed();
+
+    // Performance logging
+    if let Some(usage) = &response_data.usage {
+        let created = response_data.created.unwrap_or(0);
+        let now_s = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let server_duration_s = now_s.saturating_sub(created);
+        let reasoning_tokens = usage
+            .completion_tokens_details
+            .as_ref()
+            .and_then(|d| d.reasoning_tokens)
+            .or(usage.reasoning_tokens)
+            .unwrap_or(0);
+
+        let log_data = json!({
+            "timestamp_s": now_s,
+            "model": &llm_config.model,
+            "prompt_tokens": usage.prompt_tokens,
+            "completion_tokens": usage.completion_tokens,
+            "reasoning_tokens": reasoning_tokens,
+            "local_elapsed_ms": elapsed.as_millis() as u64,
+            "server_duration_s": if created > 0 { server_duration_s } else { 0 },
+            "created": created
+        });
+
+        let state_dir = dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".local")
+            .join("state")
+            .join("article-scraper");
+
+        if let Err(e) = tokio::fs::create_dir_all(&state_dir).await {
+            tracing::error!("Failed to create state dir: {}", e);
+        } else {
+            let log_line = format!("{}\n", log_data);
+            use tokio::io::AsyncWriteExt;
+            match tokio::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(state_dir.join("llm_perf.jsonl"))
+                .await
+            {
+                Ok(mut file) => {
+                    let _ = file.write_all(log_line.as_bytes()).await;
+                }
+                Err(e) => {
+                    tracing::error!("Failed to open llm_perf.jsonl: {}", e);
+                }
+            }
+        }
+    }
+
     let llm_content = response_data
         .choices
         .first()
