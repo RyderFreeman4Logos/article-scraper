@@ -163,6 +163,7 @@ pub async fn summarize_and_rename(path: PathBuf, config: Arc<AppConfig>) -> Resu
         let log_data = json!({
             "timestamp_s": now_s,
             "model": &llm_config.model,
+            "file_path": path.to_string_lossy(),
             "prompt_tokens": usage.prompt_tokens,
             "completion_tokens": usage.completion_tokens,
             "reasoning_tokens": reasoning_tokens,
@@ -245,8 +246,11 @@ pub async fn summarize_and_rename(path: PathBuf, config: Arc<AppConfig>) -> Resu
 }
 
 fn commit_changes(article_path: &Path, summary_path: &Path, summary: &str) -> Result<()> {
+    let work_dir = article_path.parent().unwrap_or(Path::new("."));
+
     // Stage files
     let status = Command::new("git")
+        .current_dir(work_dir)
         .arg("add")
         .arg(article_path)
         .arg(summary_path)
@@ -260,6 +264,7 @@ fn commit_changes(article_path: &Path, summary_path: &Path, summary: &str) -> Re
     // Commit
     let commit_msg = summary.replace('\n', " ");
     let status = Command::new("git")
+        .current_dir(work_dir)
         .arg("commit")
         .arg("-m")
         .arg(&commit_msg)
