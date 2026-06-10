@@ -1,0 +1,13 @@
+[package]
+name = "article-scraper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+config.workspace = true
+core_lib.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
